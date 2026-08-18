@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import time
+import time, os
 from pathlib import Path
 
 # Avoid Flask auto package discovery (which uses pkgutil.get_loader)
@@ -427,4 +427,6 @@ def api_notifications_clear():
     return jsonify(clear_notifications())
 
 if __name__ == '__main__':
-    app.run(port=4000, host='0.0.0.0')
+    port = int(os.environ.get('PORT', 4000))
+    app.run(port=port, host='0.0.0.0')
+
