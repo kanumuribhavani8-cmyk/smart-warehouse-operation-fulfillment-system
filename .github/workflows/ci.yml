@@ -1,0 +1,38 @@
+name: CI Demo
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r python_backend/requirements.txt
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+      - name: Start Python backend
+        run: |
+          nohup python python_backend/app.py > backend.log 2>&1 &
+      - name: Wait for server
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://127.0.0.1:4000/api/state >/dev/null 2>&1; then
+              echo "server up"; break
+            fi
+            sleep 1
+          done
+      - name: Run demo script
+        run: |
+          chmod +x demo.sh
+          ./demo.sh

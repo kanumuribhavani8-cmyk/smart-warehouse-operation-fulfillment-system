@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniStock Central // Enterprise Warehouse Controller</title>
+  <meta name="description" content="OmniStock Central — Intelligent inventory allocation, order picking, packing, dispatching, and bottleneck analytics command center." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root, [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --bg-card-hover: #ffffff;
+      --bg-input: #f1f5f9;
+      --border-color: rgba(15, 23, 42, 0.08);
+      --border-active: rgba(124, 58, 237, 0.4);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent: #7c3aed;
+      --accent-hover: #6d28d9;
+      --accent-glow: rgba(124, 58, 237, 0.18);
+      --success: #059669;
+      --success-glow: rgba(5, 150, 105, 0.15);
+      --warning: #d97706;
+      --warning-glow: rgba(217, 119, 6, 0.15);
+      --danger: #e11d48;
+      --danger-glow: rgba(225, 29, 72, 0.15);
+      --cyan: #6366f1;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 8px -1px rgba(15, 23, 42, 0.04);
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --bg-card-hover: rgba(30, 41, 59, 0.95);
+      --bg-input: #1e293b;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(139, 92, 246, 0.5);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.2);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.2);
+      --danger: #f43f5e;
+      --danger-glow: rgba(244, 63, 94, 0.2);
+      --cyan: #818cf8;
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Ambient background glowing orbs */
+    .ambient-bg {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.2;
+      animation: float 20s infinite ease-in-out;
+    }
+    .orb-1 { width: 500px; height: 500px; background: var(--accent); top: -120px; left: -100px; }
+    .orb-2 { width: 450px; height: 450px; background: var(--cyan); bottom: -150px; right: -120px; animation-delay: -6s; }
+    .orb-3 { width: 350px; height: 350px; background: #e0e7ff; top: 40%; right: 15%; animation-delay: -12s; opacity: 0.25; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-30px) scale(1.06); }
+    }
+
+    /* Layout */
+    .app-container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* Header */
+    header.main-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 24px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 24px;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+    .brand-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(5, 150, 105, 0.08);
+      border: 1px solid rgba(5, 150, 105, 0.25);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--success);
+    }
+    .status-pulse {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+      animation: pulse-ring 2s infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 18px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      user-select: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      color: #ffffff;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px var(--accent-glow);
+      filter: brightness(1.08);
+    }
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-active);
+      transform: translateY(-1px);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #047857);
+      color: #fff;
+      box-shadow: 0 4px 12px var(--success-glow);
+    }
+    .btn-warning {
+      background: linear-gradient(135deg, var(--warning), #b45309);
+      color: #ffffff;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #be123c);
+      color: #fff;
+      box-shadow: 0 4px 12px var(--danger-glow);
+    }
+    .btn-icon {
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-icon:hover {
+      color: var(--text-primary);
+      border-color: var(--border-active);
+    }
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 11px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* KPI Summary Stats Bar */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-active);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 3px;
+      background: var(--accent);
+      opacity: 0.9;
+    }
+    .kpi-card.kpi-success::before { background: var(--success); }
+    .kpi-card.kpi-warning::before { background: var(--warning); }
+    .kpi-card.kpi-danger::before { background: var(--danger); }
+    .kpi-card.kpi-cyan::before { background: var(--cyan); }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kpi-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-badge {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .tab-btn.active .tab-badge {
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+
+    /* Tab Contents */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Section Cards */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 24px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .card-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Orders Flow & Cards */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 18px;
+    }
+    .order-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      transition: var(--transition);
+      position: relative;
+    }
+    .order-card:hover {
+      border-color: var(--border-active);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .order-id-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-priority {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .priority-3 { background: rgba(225, 29, 72, 0.1); color: var(--danger); border: 1px solid rgba(225, 29, 72, 0.25); }
+    .priority-2 { background: rgba(217, 119, 6, 0.1); color: var(--warning); border: 1px solid rgba(217, 119, 6, 0.25); }
+    .priority-1 { background: rgba(124, 58, 237, 0.1); color: var(--accent); border: 1px solid rgba(124, 58, 237, 0.25); }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .status-created { background: #e2e8f0; color: #475569; }
+    .status-allocated { background: rgba(99, 102, 241, 0.12); color: var(--cyan); }
+    .status-partial { background: rgba(217, 119, 6, 0.12); color: var(--warning); }
+    .status-partial-pick { background: rgba(217, 119, 6, 0.18); color: var(--warning); }
+    .status-picked { background: rgba(124, 58, 237, 0.12); color: var(--accent); }
+    .status-packed { background: rgba(147, 51, 234, 0.12); color: #9333ea; }
+    .status-dispatched { background: rgba(5, 150, 105, 0.12); color: var(--success); }
+    .status-exception { background: rgba(225, 29, 72, 0.12); color: var(--danger); }
+
+    .item-row {
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border-color);
+    }
+    .item-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .item-meta strong { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+    .item-meta span { color: var(--text-muted); font-size: 11px; }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: rgba(15, 23, 42, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      border-radius: 4px;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pick-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .qty-input {
+      width: 60px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 4px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      text-align: center;
+      font-weight: 600;
+    }
+    .qty-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .order-footer-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Custom Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+    table.custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    table.custom-table th {
+      padding: 12px 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border-color);
+    }
+    table.custom-table td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+    table.custom-table tr:hover td {
+      background: rgba(124, 58, 237, 0.02);
+      color: var(--text-primary);
+    }
+
+    /* Custom Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; animation: modalFadeIn 0.2s ease; }
+    @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    .modal-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .modal-header h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .form-control {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--bg-surface);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* Toast System */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      min-width: 280px;
+      max-width: 400px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--warning); }
+    .toast.info { border-left: 4px solid var(--accent); }
+    @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-container { padding: 12px 10px 40px; }
+      header.main-header { padding: 14px 16px; }
+      .orders-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background lighting -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="brand-section">
+        <div class="brand-icon">🏢</div>
+        <div class="brand-text">
+          <h1>OMNISTOCK CENTRAL</h1>
+          <p>Enterprise Warehouse Controller</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-badge" id="api-status">
+          <span class="status-pulse"></span>
+          <span>Online (:4000)</span>
+        </div>
+        <button id="btn-allocate" class="btn btn-primary">
+          <span>⚡ Run Allocation</span>
+        </button>
+        <button id="btn-create-order" class="btn btn-secondary">
+          <span>+ New Order</span>
+        </button>
+        <button id="btn-refresh" class="btn btn-icon" title="Refresh Live State">
+          🔄
+        </button>
+        <button id="btn-theme" class="btn btn-icon" title="Toggle Theme">
+          🌓
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Summary Bar -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-label">Active Orders <span>📦</span></div>
+        <div class="kpi-value" id="kpi-orders-count">0</div>
+        <div class="kpi-sub" id="kpi-orders-sub">0 Pending Dispatch</div>
+      </div>
+      <div class="kpi-card kpi-success">
+        <div class="kpi-label">Total Units in Stock <span>📊</span></div>
+        <div class="kpi-value" id="kpi-inventory-count">0</div>
+        <div class="kpi-sub" id="kpi-inventory-sub">3 Unique SKUs</div>
+      </div>
+      <div class="kpi-card kpi-warning">
+        <div class="kpi-label">Backorder Queue <span>⚠️</span></div>
+        <div class="kpi-value" id="kpi-backorders-count">0</div>
+        <div class="kpi-sub" id="kpi-backorders-sub">Awaiting Inbound</div>
+      </div>
+      <div class="kpi-card kpi-danger">
+        <div class="kpi-label">Low Stock Alerts <span>🚨</span></div>
+        <div class="kpi-value" id="kpi-lowstock-count">0</div>
+        <div class="kpi-sub" id="kpi-lowstock-sub">Below Threshold</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-orders">
+        📦 Orders Floor <span class="tab-badge" id="badge-orders">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-inventory">
+        📋 Inventory Matrix <span class="tab-badge" id="badge-inv">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-backorders">
+        ⚠️ Backorder Queue <span class="tab-badge" id="badge-backorders">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-analytics">
+        📈 Visual Analytics
+      </button>
+      <button class="tab-btn" data-tab="tab-notifications">
+        🔔 Event Log <span class="tab-badge" id="badge-notes">0</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Orders Pipeline -->
+    <div id="tab-orders" class="tab-content active">
+      <div class="glass-card">
+        <div class="card-header">
+          <h2><span>📦</span> Live Order Fulfillment Pipeline</h2>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="order-search" class="form-control" placeholder="Search order ID or status..." style="max-width:240px;padding:6px 12px;" />
+          </div>
+        </div>
+        <div id="orders-container" class="orders-grid">
+          <!-- Dynamic Order Cards -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Inventory Matrix -->
+    <div id="tab-inventory" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <h2><span>📋</span> Real-time Inventory & Restock Matrix</h2>
+          <button id="btn-supplier-reorder" class="btn btn-secondary btn-sm">+ Supplier Reorder</button>
+        </div>
+        <div class="table-container">
+          <table class="custom-table" id="inventory-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Available Units</th>
+                <th>Reorder Threshold</th>
+                <th>Stock Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <!-- Dynamic Inventory Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Backorders & Priority -->
+    <div id="tab-backorders" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <h2><span>⚠️</span> Prioritized Backorders & Resolution Hub</h2>
+          <p style="font-size:13px;color:var(--text-secondary);">Ordered dynamically by customer order priority and wait time.</p>
+        </div>
+        <div class="table-container">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Backorder ID</th>
+                <th>Target Order</th>
+                <th>Product SKU</th>
+                <th>Short Qty</th>
+                <th>Order Priority</th>
+                <th>Wait Age</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="backorders-tbody">
+              <!-- Dynamic Backorder Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: Visual Analytics -->
+    <div id="tab-analytics" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <h2><span>📈</span> Fulfillment Performance & Operations Dashboard</h2>
+          <button id="btn-snapshot" class="btn btn-secondary btn-sm">Refresh Charts</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;margin-bottom:20px;">
+          <div class="glass-card" style="margin-bottom:0;background:var(--bg-surface);">
+            <h3 style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">Order Status Distribution</h3>
+            <canvas id="chart-status" height="200"></canvas>
+          </div>
+          <div class="glass-card" style="margin-bottom:0;background:var(--bg-surface);">
+            <h3 style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">Inventory Stock Levels</h3>
+            <canvas id="chart-inventory" height="200"></canvas>
+          </div>
+        </div>
+        <div class="glass-card" style="margin-bottom:0;background:var(--bg-surface);">
+          <h3 style="font-size:14px;color:var(--text-secondary);margin-bottom:12px;">Fulfillment Stage Durations</h3>
+          <canvas id="chart-fulfillment" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Notifications & Activity Feed -->
+    <div id="tab-notifications" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <h2><span>🔔</span> Operational Event & Notification Feed</h2>
+          <div style="display:flex;gap:8px;">
+            <button id="btn-send-notify" class="btn btn-secondary btn-sm">+ Dispatch Alert</button>
+            <button id="btn-clear-notes" class="btn btn-secondary btn-sm">Clear Log</button>
+          </div>
+        </div>
+        <div id="notifications-list" style="display:flex;flex-direction:column;gap:10px;">
+          <!-- Dynamic notifications -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Modals -->
+  <!-- 1. Damage Item Modal -->
+  <div id="modal-damage" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Report Damaged Stock</h3>
+        <button class="btn btn-icon btn-sm modal-close">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Order ID</label>
+        <input type="text" id="damage-order-id" class="form-control" readonly />
+      </div>
+      <div class="form-group">
+        <label>Product SKU</label>
+        <select id="damage-product-id" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label>Damaged Quantity</label>
+        <input type="number" id="damage-qty" class="form-control" value="1" min="1" />
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+        <input type="checkbox" id="damage-auto-resolve" checked style="accent-color:var(--accent);width:18px;height:18px;" />
+        <label for="damage-auto-resolve" style="margin:0;cursor:pointer;">Auto-resolve (re-allocate stock & generate reorder suggestions)</label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close">Cancel</button>
+        <button id="btn-submit-damage" class="btn btn-danger">Confirm Damage</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Resolve Backorder Modal -->
+  <div id="modal-resolve-backorder" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Resolve Backorder</h3>
+        <button class="btn btn-icon btn-sm modal-close">&times;</button>
+      </div>
+      <input type="hidden" id="resolve-backorder-id" />
+      <div class="form-group">
+        <label>Received Restock Quantity</label>
+        <input type="number" id="resolve-backorder-qty" class="form-control" value="10" min="1" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close">Cancel</button>
+        <button id="btn-submit-resolve-backorder" class="btn btn-success">Receive & Resolve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. New Order Modal -->
+  <div id="modal-new-order" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Create Test Order</h3>
+        <button class="btn btn-icon btn-sm modal-close">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Order ID</label>
+        <input type="text" id="new-order-id" class="form-control" value="o4" />
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="new-order-priority" class="form-control">
+          <option value="3">High Priority (3)</option>
+          <option value="2">Medium Priority (2)</option>
+          <option value="1">Standard Priority (1)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Product & Quantity</label>
+        <div style="display:flex;gap:8px;">
+          <select id="new-order-product" class="form-control">
+            <option value="p1">Widget A (p1)</option>
+            <option value="p2">Widget B (p2)</option>
+            <option value="p3">Widget C (p3)</option>
+          </select>
+          <input type="number" id="new-order-qty" class="form-control" value="5" min="1" style="max-width:100px;" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close">Cancel</button>
+        <button id="btn-submit-new-order" class="btn btn-primary">Create Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Supplier Reorder Modal -->
+  <div id="modal-supplier-reorder" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Place Supplier Restock</h3>
+        <button class="btn btn-icon btn-sm modal-close">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Select Product</label>
+        <select id="reorder-product-id" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label>Restock Units</label>
+        <input type="number" id="reorder-units" class="form-control" value="25" min="1" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close">Cancel</button>
+        <button id="btn-submit-reorder" class="btn btn-success">Receive Stock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Send Notification Modal -->
+  <div id="modal-notify" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Dispatch Operational Notification</h3>
+        <button class="btn btn-icon btn-sm modal-close">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Target Channel / Recipient</label>
+        <input type="text" id="notify-target" class="form-control" value="ops@omnistock.local" />
+      </div>
+      <div class="form-group">
+        <label>Alert Message</label>
+        <textarea id="notify-message" class="form-control" rows="3" placeholder="Enter alert message..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close">Cancel</button>
+        <button id="btn-submit-notify" class="btn btn-primary">Send Alert</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Alert Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script>
+    const apiBase = window.location.origin.includes('http') ? (window.location.port === '4000' ? '/api' : 'http://localhost:4000/api') : 'http://localhost:4000/api';
+
+    let state = {
+      inventory: [],
+      orders: [],
+      backorders: [],
+      notifications: [],
+      analytics: null
+    };
+
+    let charts = {};
+
+    // Toast utility
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+      t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(100%)';
+        t.style.transition = 'all 0.3s ease';
+        setTimeout(() => t.remove(), 300);
+      }, 3500);
+    }
+
+    // Modal helpers
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    document.querySelectorAll('.modal-close').forEach(b => {
+      b.addEventListener('click', (e) => {
+        e.target.closest('.modal-overlay').classList.remove('active');
+      });
+    });
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('btn-theme');
+    let currentTheme = localStorage.getItem('omnistock_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+    themeBtn.addEventListener('click', () => {
+      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      localStorage.setItem('omnistock_theme', currentTheme);
+      showToast(`Switched to ${currentTheme === 'light' ? 'Crisp Minimalist Light' : 'Titanium Dark'} theme`, 'info');
+      if (document.getElementById('tab-analytics').classList.contains('active')) {
+        renderAnalyticsCharts();
+      }
+    });
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-tab');
+        document.getElementById(target).classList.add('active');
+        if (target === 'tab-analytics') renderAnalyticsCharts();
+      });
+    });
+
+    // Chart.js dynamic loader
+    const loadChartJs = () => new Promise((resolve) => {
+      if (window.Chart) return resolve(window.Chart);
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+      script.onload = () => resolve(window.Chart);
+      document.head.appendChild(script);
+    });
+
+    // Main Data Loader
+    async function loadData() {
+      try {
+        const [invRes, ordersRes, backRes, notesRes] = await Promise.all([
+          fetch(`${apiBase}/inventory`).then(r => r.json()),
+          fetch(`${apiBase}/orders`).then(r => r.json()),
+          fetch(`${apiBase}/backorders`).then(r => r.json()),
+          fetch(`${apiBase}/notifications`).then(r => r.json())
+        ]);
+
+        state.inventory = invRes || [];
+        state.orders = ordersRes || [];
+        state.backorders = backRes || [];
+        state.notifications = notesRes || [];
+
+        renderKPIs();
+        renderOrders();
+        renderInventory();
+        renderBackorders();
+        renderNotifications();
+        document.getElementById('api-status').style.borderColor = 'rgba(5, 150, 105, 0.25)';
+        document.getElementById('api-status').querySelector('span:last-child').textContent = 'Online (:4000)';
+      } catch (err) {
+        console.error(err);
+        document.getElementById('api-status').style.borderColor = 'rgba(225, 29, 72, 0.35)';
+        document.getElementById('api-status').querySelector('span:last-child').textContent = 'Reconnecting...';
+      }
+    }
+
+    // Render KPIs
+    function renderKPIs() {
+      const activeOrders = state.orders.filter(o => !o.dispatched);
+      const totalStock = state.inventory.reduce((sum, p) => sum + (p.available || 0), 0);
+      const lowStock = state.inventory.filter(p => p.available <= p.reorderThreshold);
+
+      document.getElementById('kpi-orders-count').textContent = state.orders.length;
+      document.getElementById('kpi-orders-sub').textContent = `${activeOrders.length} In Pipeline`;
+      document.getElementById('badge-orders').textContent = state.orders.length;
+
+      document.getElementById('kpi-inventory-count').textContent = totalStock;
+      document.getElementById('kpi-inventory-sub').textContent = `${state.inventory.length} Unique SKUs`;
+      document.getElementById('badge-inv').textContent = state.inventory.length;
+
+      document.getElementById('kpi-backorders-count').textContent = state.backorders.length;
+      document.getElementById('badge-backorders').textContent = state.backorders.length;
+
+      document.getElementById('kpi-lowstock-count').textContent = lowStock.length;
+      document.getElementById('badge-notes').textContent = state.notifications.length;
+    }
+
+    // Render Orders
+    function renderOrders() {
+      const container = document.getElementById('orders-container');
+      const search = document.getElementById('order-search').value.toLowerCase();
+
+      const filtered = state.orders.filter(o => 
+        o.orderId.toLowerCase().includes(search) || 
+        o.status.toLowerCase().includes(search)
+      );
+
+      if (!filtered.length) {
+        container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No orders found matching criteria.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(order => {
+        const priorityClass = `priority-${order.priority}`;
+        const statusClass = `status-${order.status}`;
+
+        const itemsHtml = order.items.map(it => {
+          const alloc = (order.allocated && order.allocated[it.productId]) || 0;
+          const picked = (order.pickedItems && order.pickedItems[it.productId]) || 0;
+          const pct = alloc === 0 ? 0 : Math.min(100, Math.round((picked / alloc) * 100));
+
+          return `
+            <div class="item-row">
+              <div class="item-meta">
+                <strong>${it.productId}</strong>
+                <span>Need: <b>${it.qty}</b> | Alloc: <b>${alloc}</b> | Picked: <b>${picked}</b></span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" style="width: ${pct}%;"></div>
+              </div>
+              <div class="pick-actions">
+                <input type="number" id="pick_${order.orderId}_${it.productId}" class="qty-input" placeholder="Qty" value="1" min="1" max="${alloc - picked}" />
+                <button class="btn btn-secondary btn-sm" onclick="handlePickItem('${order.orderId}', '${it.productId}')">Pick</button>
+                <button class="btn btn-secondary btn-sm" style="color:var(--accent);" onclick="handleScanItem('${order.orderId}', '${it.productId}')">⚡ Scan (+1)</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="order-card">
+            <div class="order-top">
+              <div class="order-id-badge">
+                <span>📦 Order #${order.orderId}</span>
+                <span class="badge-priority ${priorityClass}">Priority ${order.priority}</span>
+              </div>
+              <span class="badge-status ${statusClass}">${order.status}</span>
+            </div>
+            <div>${itemsHtml}</div>
+            <div class="order-footer-actions">
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-secondary btn-sm" ${!order.picked || order.packed ? 'disabled style="opacity:0.4;"' : ''} onclick="handlePackOrder('${order.orderId}')">📦 Pack</button>
+                <button class="btn btn-success btn-sm" ${!order.packed || order.dispatched ? 'disabled style="opacity:0.4;"' : ''} onclick="handleDispatchOrder('${order.orderId}')">🚀 Dispatch</button>
+              </div>
+              <button class="btn btn-danger btn-sm" onclick="openDamageModal('${order.orderId}')">⚠️ Damage</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Inventory
+    function renderInventory() {
+      const tbody = document.getElementById('inventory-tbody');
+      tbody.innerHTML = state.inventory.map(p => {
+        const isLow = p.available <= p.reorderThreshold;
+        const statusBadge = isLow
+          ? `<span class="badge-status status-exception">Low Stock (≤ ${p.reorderThreshold})</span>`
+          : `<span class="badge-status status-dispatched">Healthy</span>`;
+
+        return `
+          <tr>
+            <td><strong style="font-family:'JetBrains Mono';color:var(--accent);">${p.productId}</strong></td>
+            <td><strong>${p.name}</strong></td>
+            <td><span style="font-size:15px;font-weight:700;color:var(--text-primary);">${p.available}</span> units</td>
+            <td>${p.reorderThreshold} units</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-secondary btn-sm" onclick="openQuickRestock('${p.productId}')">+ Restock</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render Backorders
+    async function renderBackorders() {
+      const tbody = document.getElementById('backorders-tbody');
+      try {
+        const prioritized = await fetch(`${apiBase}/backorder-priority`).then(r => r.json());
+        if (!prioritized || !prioritized.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No active backorders in queue.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = prioritized.map(b => `
+          <tr>
+            <td><strong style="font-family:'JetBrains Mono';color:var(--warning);">${b.id}</strong></td>
+            <td><strong>Order #${b.orderId}</strong></td>
+            <td><span style="color:var(--accent);font-weight:600;">${b.productId}</span></td>
+            <td><span style="font-weight:700;color:var(--danger);">${b.qty} units</span></td>
+            <td><span class="badge-priority priority-${b.priority}">P${b.priority}</span></td>
+            <td>${b.ageMin} min ago</td>
+            <td>
+              <button class="btn btn-success btn-sm" onclick="openResolveBackorderModal('${b.id}', ${b.qty})">Receive Stock</button>
+              <button class="btn btn-secondary btn-sm" onclick="quickNotifyBackorder('${b.id}', '${b.orderId}', '${b.productId}')">Alert Ops</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Render Notifications
+    function renderNotifications() {
+      const list = document.getElementById('notifications-list');
+      if (!state.notifications.length) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">No operational notifications recorded.</div>';
+        return;
+      }
+
+      list.innerHTML = state.notifications.map(n => `
+        <div style="background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">To: ${n.to}</div>
+            <div style="font-size:13px;color:var(--text-primary);">${n.message}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;margin-left:16px;">${new Date(n.timestamp).toLocaleTimeString()}</div>
+        </div>
+      `).join('');
+    }
+
+    // Render Analytics Charts
+    async function renderAnalyticsCharts() {
+      const Chart = await loadChartJs();
+      const analytics = await fetch(`${apiBase}/analytics`).then(r => r.json());
+
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const textColor = isLight ? '#475569' : '#94a3b8';
+      const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+
+      // Status Doughnut
+      const statusCounts = state.orders.reduce((acc, o) => { acc[o.status] = (acc[o.status] || 0) + 1; return acc; }, {});
+      const statusLabels = Object.keys(statusCounts);
+      const statusData = statusLabels.map(l => statusCounts[l]);
+
+      if (charts.status) charts.status.destroy();
+      charts.status = new Chart(document.getElementById('chart-status'), {
+        type: 'doughnut',
+        data: {
+          labels: statusLabels,
+          datasets: [{
+            data: statusData,
+            backgroundColor: ['#7c3aed', '#6366f1', '#059669', '#d97706', '#e11d48', '#8b5cf6']
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+      });
+
+      // Inventory Bar Chart
+      const invLabels = state.inventory.map(p => p.name);
+      const invAvailable = state.inventory.map(p => p.available);
+      const invThreshold = state.inventory.map(p => p.reorderThreshold);
+
+      if (charts.inventory) charts.inventory.destroy();
+      charts.inventory = new Chart(document.getElementById('chart-inventory'), {
+        type: 'bar',
+        data: {
+          labels: invLabels,
+          datasets: [
+            { label: 'Available', data: invAvailable, backgroundColor: '#7c3aed' },
+            { label: 'Threshold', data: invThreshold, backgroundColor: 'rgba(225, 29, 72, 0.35)' }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: textColor } } }, scales: { y: { ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } } }
+      });
+
+      // Fulfillment Speed Bar
+      if (charts.fulfillment) charts.fulfillment.destroy();
+      charts.fulfillment = new Chart(document.getElementById('chart-fulfillment'), {
+        type: 'bar',
+        data: {
+          labels: ['Avg Pick Duration', 'Avg Pack Duration', 'Total Fulfillment Cycle'],
+          datasets: [{
+            label: 'Duration (seconds)',
+            data: [Math.round((analytics.avgPickMs || 0) / 1000), Math.round((analytics.avgPackMs || 0) / 1000), Math.round((analytics.avgFulfillmentMs || 0) / 1000)],
+            backgroundColor: ['#7c3aed', '#6366f1', '#059669']
+          }]
+        },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor }, grid: { color: gridColor } }, y: { ticks: { color: textColor }, grid: { display: false } } } }
+      });
+    }
+
+    // Actions
+    document.getElementById('btn-allocate').addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${apiBase}/allocate`, { method: 'POST' }).then(r => r.json());
+        showToast('Dynamic inventory allocation executed successfully!', 'success');
+        await loadData();
+      } catch (e) {
+        showToast('Allocation failed: ' + e.message, 'error');
+      }
+    });
+
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      loadData();
+      showToast('Warehouse state synchronized', 'info');
+    });
+
+    document.getElementById('order-search').addEventListener('input', renderOrders);
+
+    // Pick item
+    async function handlePickItem(orderId, productId) {
+      const input = document.getElementById(`pick_${orderId}_${productId}`);
+      const qty = parseInt(input.value || 1);
+      if (isNaN(qty) || qty <= 0) return showToast('Please enter a valid pick quantity', 'warning');
+      try {
+        const res = await fetch(`${apiBase}/pick-item/${orderId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, qty })
+        }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        showToast(`Picked ${qty} unit(s) of ${productId} for Order #${orderId}`, 'success');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Barcode scan simulator
+    async function handleScanItem(orderId, productId) {
+      try {
+        const res = await fetch(`${apiBase}/pick-item/${orderId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, qty: 1 })
+        }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        showToast(`⚡ Scanned SKU ${productId} (+1)`, 'info');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Pack
+    async function handlePackOrder(orderId) {
+      try {
+        const res = await fetch(`${apiBase}/pack/${orderId}`, { method: 'POST' }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        showToast(`Order #${orderId} packed & verified for dispatch`, 'success');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Dispatch
+    async function handleDispatchOrder(orderId) {
+      try {
+        const res = await fetch(`${apiBase}/dispatch/${orderId}`, { method: 'POST' }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        showToast(`🚀 Order #${orderId} dispatched to carrier!`, 'success');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // Damage Modal
+    function openDamageModal(orderId) {
+      document.getElementById('damage-order-id').value = orderId;
+      const order = state.orders.find(o => o.orderId === orderId);
+      const select = document.getElementById('damage-product-id');
+      select.innerHTML = (order?.items || []).map(i => `<option value="${i.productId}">${i.productId} (Qty: ${i.qty})</option>`).join('');
+      openModal('modal-damage');
+    }
+
+    document.getElementById('btn-submit-damage').addEventListener('click', async () => {
+      const orderId = document.getElementById('damage-order-id').value;
+      const productId = document.getElementById('damage-product-id').value;
+      const qty = parseInt(document.getElementById('damage-qty').value || 1);
+      const autoResolve = document.getElementById('damage-auto-resolve').checked;
+
+      try {
+        const res = await fetch(`${apiBase}/damage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, productId, qty, autoResolve })
+        }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        closeModal('modal-damage');
+        showToast(`Reported ${qty} damaged unit(s) of ${productId}`, 'warning');
+        if (res.suggestions?.length) {
+          showToast(`Supplier reorder suggested for ${res.suggestions.length} items`, 'info');
+        }
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    });
+
+    // Quick Restock
+    function openQuickRestock(productId) {
+      const select = document.getElementById('reorder-product-id');
+      select.innerHTML = state.inventory.map(p => `<option value="${p.productId}" ${p.productId === productId ? 'selected' : ''}>${p.name} (${p.productId})</option>`).join('');
+      openModal('modal-supplier-reorder');
+    }
+    document.getElementById('btn-supplier-reorder').addEventListener('click', () => {
+      openQuickRestock(state.inventory[0]?.productId || 'p1');
+    });
+
+    document.getElementById('btn-submit-reorder').addEventListener('click', async () => {
+      const productId = document.getElementById('reorder-product-id').value;
+      const qty = parseInt(document.getElementById('reorder-units').value || 25);
+      try {
+        const res = await fetch(`${apiBase}/reorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, qty })
+        }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        closeModal('modal-supplier-reorder');
+        showToast(`Stock replenished: +${qty} units of ${productId}`, 'success');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    });
+
+    // Resolve Backorder Modal
+    function openResolveBackorderModal(id, qty) {
+      document.getElementById('resolve-backorder-id').value = id;
+      document.getElementById('resolve-backorder-qty').value = qty;
+      openModal('modal-resolve-backorder');
+    }
+    document.getElementById('btn-submit-resolve-backorder').addEventListener('click', async () => {
+      const backorderId = document.getElementById('resolve-backorder-id').value;
+      const qty = parseInt(document.getElementById('resolve-backorder-qty').value || 1);
+      try {
+        const res = await fetch(`${apiBase}/resolve-backorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ backorderId, qty })
+        }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        closeModal('modal-resolve-backorder');
+        showToast(`Backorder ${backorderId} resolved with ${qty} received units`, 'success');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    });
+
+    // Create Order Modal
+    document.getElementById('btn-create-order').addEventListener('click', () => openModal('modal-new-order'));
+    document.getElementById('btn-submit-new-order').addEventListener('click', async () => {
+      const orderId = document.getElementById('new-order-id').value.trim();
+      const priority = parseInt(document.getElementById('new-order-priority').value);
+      const productId = document.getElementById('new-order-product').value;
+      const qty = parseInt(document.getElementById('new-order-qty').value || 1);
+
+      if (!orderId) return showToast('Order ID is required', 'warning');
+
+      try {
+        const order = {
+          orderId,
+          priority,
+          items: [{ productId, qty }]
+        };
+        const res = await fetch(`${apiBase}/order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order })
+        }).then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        closeModal('modal-new-order');
+        showToast(`Order #${orderId} created! Run Allocation to assign stock.`, 'success');
+        // Auto bump ID
+        document.getElementById('new-order-id').value = 'o' + (parseInt(orderId.replace(/\D/g, '') || 0) + 1);
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    });
+
+    // Notifications
+    document.getElementById('btn-send-notify').addEventListener('click', () => openModal('modal-notify'));
+    document.getElementById('btn-submit-notify').addEventListener('click', async () => {
+      const target = document.getElementById('notify-target').value;
+      const message = document.getElementById('notify-message').value;
+      if (!message) return showToast('Message is required', 'warning');
+      try {
+        const res = await fetch(`${apiBase}/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target, message })
+        }).then(r => r.json());
+        closeModal('modal-notify');
+        showToast(`Alert dispatched to ${target}`, 'info');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    });
+
+    async function quickNotifyBackorder(id, orderId, productId) {
+      try {
+        await fetch(`${apiBase}/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target: 'ops@omnistock.local',
+            message: `Priority Backorder Alert: Order #${orderId} is blocked awaiting ${productId} (${id}).`
+          })
+        });
+        showToast(`Alert dispatched to floor manager for Backorder ${id}`, 'info');
+        await loadData();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    document.getElementById('btn-clear-notes').addEventListener('click', async () => {
+      await fetch(`${apiBase}/notifications/clear`, { method: 'POST' });
+      showToast('Notification log cleared', 'info');
+      await loadData();
+    });
+
+    document.getElementById('btn-snapshot').addEventListener('click', renderAnalyticsCharts);
+
+    // Initial load and periodic heartbeat
+    loadData();
+    setInterval(loadData, 6000);
+  </script>
+</body>
+</html>

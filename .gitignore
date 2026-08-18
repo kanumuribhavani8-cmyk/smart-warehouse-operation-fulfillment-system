@@ -1,0 +1,28 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Operating System / IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Distribution packages (optional local artifacts)
+smart-warehouse.zip
