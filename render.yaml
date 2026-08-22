@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: smart-warehouse-system
+    runtime: python
+    buildCommand: pip install -r python_backend/requirements.txt
+    startCommand: cd python_backend && gunicorn app:app --bind 0.0.0.0:$PORT
+    plan: free

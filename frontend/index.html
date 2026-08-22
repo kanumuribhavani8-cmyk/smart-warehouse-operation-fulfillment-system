@@ -685,7 +685,7 @@
       <div class="header-actions">
         <div class="status-badge" id="api-status">
           <span class="status-pulse"></span>
-          <span>Online (:4000)</span>
+          <span>Online</span>
         </div>
         <button id="btn-allocate" class="btn btn-primary">
           <span>⚡ Run Allocation</span>
@@ -992,7 +992,7 @@
 
   <!-- Scripts -->
   <script>
-    const apiBase = window.location.origin.includes('http') ? (window.location.port === '4000' ? '/api' : 'http://localhost:4000/api') : 'http://localhost:4000/api';
+    const apiBase = (window.location.protocol.startsWith('http') && window.location.hostname !== '') ? '/api' : 'http://localhost:4000/api';
 
     let state = {
       inventory: [],
@@ -1089,8 +1089,8 @@
         renderInventory();
         renderBackorders();
         renderNotifications();
-        document.getElementById('api-status').style.borderColor = 'rgba(5, 150, 105, 0.25)';
-        document.getElementById('api-status').querySelector('span:last-child').textContent = 'Online (:4000)';
+        const portLabel = window.location.port ? `Online (:${window.location.port})` : (window.location.protocol.startsWith('http') ? 'Online (Cloud)' : 'Online');
+        document.getElementById('api-status').querySelector('span:last-child').textContent = portLabel;
       } catch (err) {
         console.error(err);
         document.getElementById('api-status').style.borderColor = 'rgba(225, 29, 72, 0.35)';

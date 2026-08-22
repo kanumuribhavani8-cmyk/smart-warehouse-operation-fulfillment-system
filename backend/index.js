@@ -127,5 +127,13 @@ app.post('/api/reorder', (req, res) => {
   res.json(out);
 });
 
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`Backend running on http://localhost:${port}`));
+app.listen(port, () => console.log(`Backend running on port ${port}`));
