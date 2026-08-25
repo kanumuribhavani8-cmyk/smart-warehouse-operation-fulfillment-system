@@ -1,6 +1,10 @@
 param(
-  [string]$ApiUrl = ($env:API_URL ? $env:API_URL : 'http://localhost:4000/api')
+  [string]$ApiUrl = ''
 )
+
+if (-not $ApiUrl) {
+  if ($env:API_URL) { $ApiUrl = $env:API_URL } else { $ApiUrl = 'http://localhost:4000/api' }
+}
 
 $base = $ApiUrl.TrimEnd('/')
 
