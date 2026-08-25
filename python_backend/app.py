@@ -16,16 +16,9 @@ else:
     CORS(app, origins=origins)
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    # Serve static frontend files from ../frontend
-    if path == '' or path == 'index.html':
-        return app.send_static_file('index.html')
-    try:
-        return app.send_static_file(path)
-    except Exception:
-        return app.send_static_file('index.html')
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 
 now = lambda: int(time.time() * 1000)
 
@@ -433,6 +426,17 @@ def api_notifications():
 @app.route('/api/notifications/clear', methods=['POST'])
 def api_notifications_clear():
     return jsonify(clear_notifications())
+
+
+@app.route('/<path:path>')
+def serve_static(path):
+    if path.startswith('api/') or path == 'api':
+        return jsonify({'error': 'Not found'}), 404
+    try:
+        return app.send_static_file(path)
+    except Exception:
+        return app.send_static_file('index.html')
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4000))
