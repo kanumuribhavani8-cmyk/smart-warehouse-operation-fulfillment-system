@@ -8,16 +8,24 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_FOLDER = str(BASE_DIR.parent / 'frontend')
 app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path='', instance_path=str(BASE_DIR))
-CORS(app)
+cors_origin = os.environ.get('CORS_ORIGIN', '*')
+if cors_origin == '*':
+    CORS(app)
+else:
+    origins = [o.strip() for o in cors_origin.split(',') if o.strip()]
+    CORS(app, origins=origins)
 
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
     # Serve static frontend files from ../frontend
-    if path == '':
+    if path == '' or path == 'index.html':
         return app.send_static_file('index.html')
-    return app.send_static_file(path)
+    try:
+        return app.send_static_file(path)
+    except Exception:
+        return app.send_static_file('index.html')
 
 now = lambda: int(time.time() * 1000)
 

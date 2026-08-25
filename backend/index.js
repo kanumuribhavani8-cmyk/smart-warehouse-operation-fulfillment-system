@@ -6,7 +6,10 @@ const { getBackorders, resolveBackorder, placeReorder, getAnalyticsHistory, clea
 const { getNotifications, clearNotifications } = require('./data');
 
 const app = express();
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+app.use(cors({
+  origin: corsOrigin === '*' ? '*' : corsOrigin.split(',').map(s => s.trim())
+}));
 app.use(bodyParser.json());
 
 app.get('/api/inventory', (req, res) => {

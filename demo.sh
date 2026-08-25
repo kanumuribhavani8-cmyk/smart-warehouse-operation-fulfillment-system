@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-API="http://127.0.0.1:4000/api"
+API="${1:-${API_URL:-http://127.0.0.1:4000/api}}"
+API="${API%/}"
 
 echof() { echo -e "\n==> $*"; }
 

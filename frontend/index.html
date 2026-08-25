@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniStock Central // Enterprise Warehouse Controller</title>
   <meta name="description" content="OmniStock Central — Intelligent inventory allocation, order picking, packing, dispatching, and bottleneck analytics command center." />
+  <!-- Production API Base URL (leave empty for same-origin /api, or specify remote backend URL) -->
+  <meta name="api-base" content="" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -992,7 +994,29 @@
 
   <!-- Scripts -->
   <script>
-    const apiBase = (window.location.protocol.startsWith('http') && window.location.hostname !== '') ? '/api' : 'http://localhost:4000/api';
+    // Resolve API Base URL (support window config, meta tag, URL query ?api=..., same-origin /api, or local fallback)
+    function resolveApiBase() {
+      if (typeof window !== 'undefined') {
+        if (window.API_BASE_URL) return window.API_BASE_URL.replace(/\/+$/, '');
+        if (window.__API_URL__) return window.__API_URL__.replace(/\/+$/, '');
+        const meta = document.querySelector('meta[name="api-base"]');
+        if (meta && meta.content && !meta.content.startsWith('%') && meta.content.trim() !== '') {
+          return meta.content.replace(/\/+$/, '');
+        }
+        try {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('api')) return params.get('api').replace(/\/+$/, '');
+        } catch (e) {}
+        try {
+          const stored = localStorage.getItem('API_BASE_URL');
+          if (stored) return stored.replace(/\/+$/, '');
+        } catch (e) {}
+      }
+      return (window.location.protocol.startsWith('http') && window.location.hostname !== '')
+        ? '/api'
+        : 'http://localhost:4000/api';
+    }
+    const apiBase = resolveApiBase();
 
     let state = {
       inventory: [],

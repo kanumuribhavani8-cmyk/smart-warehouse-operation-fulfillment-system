@@ -1,7 +1,8 @@
-# Demo script for Smart Warehouse prototype
-# Run after backend is started (http://localhost:4000)
+param(
+  [string]$ApiUrl = ($env:API_URL ? $env:API_URL : 'http://localhost:4000/api')
+)
 
-$base = 'http://localhost:4000/api'
+$base = $ApiUrl.TrimEnd('/')
 
 function safePost($uri, $body){
   Write-Host "POST $uri" -ForegroundColor Cyan

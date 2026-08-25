@@ -315,18 +315,20 @@ module.exports = {
   allocateAll,
   createOrder,
   pickOrder,
+  pickItem,
   packOrder,
   dispatchOrder,
   damageItem,
   getState,
-  reportStats
+  reportStats,
   getBackorders,
   resolveBackorder,
   placeReorder,
   analytics,
-  prioritizeBackorders
+  prioritizeBackorders,
   simulateNotify,
   getNotifications,
-  clearNotifications
-  ,getAnalyticsHistory, clearAnalyticsHistory
+  clearNotifications,
+  getAnalyticsHistory,
+  clearAnalyticsHistory
 };

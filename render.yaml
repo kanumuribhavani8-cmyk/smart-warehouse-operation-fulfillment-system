@@ -2,6 +2,13 @@ services:
   - type: web
     name: smart-warehouse-system
     runtime: python
-    buildCommand: pip install -r python_backend/requirements.txt
-    startCommand: cd python_backend && gunicorn app:app --bind 0.0.0.0:$PORT
     plan: free
+    buildCommand: pip install -r python_backend/requirements.txt
+    startCommand: cd python_backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: FLASK_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: "*"
